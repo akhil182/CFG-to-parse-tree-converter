@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CFG Playground — Theory of Computation</title>
+<style>
+  :root {
+    --bg: #0e0f11;
+    --bg2: #161719;
+    --bg3: #1e2023;
+    --border: #2e3035;
+    --border2: #3a3d44;
+    --text: #e8e9eb;
+    --text2: #9ba0aa;
+    --text3: #5c6070;
+    --blue: #4f8ef7;
+    --blue-bg: #1a2540;
+    --blue-dim: #2a3a5c;
+    --green: #3ecf7e;
+    --green-bg: #0e2a1e;
+    --amber: #f5a623;
+    --amber-bg: #2a1e0a;
+    --red: #f06060;
+    --red-bg: #2a1010;
+    --purple: #a47cf3;
+    --purple-bg: #1e1530;
+    --mono: 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace;
+    --sans: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    height: 52px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 28px; height: 28px;
+    background: var(--blue);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #fff; font-family: var(--mono);
+  }
+  .logo-text {
+    font-size: 15px; font-weight: 600; letter-spacing: -0.3px;
+  }
+  .logo-sub {
+    font-size: 11px; color: var(--text3); font-family: var(--mono);
+    margin-left: 4px;
+  }
+  .topbar-right {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .badge {
+    font-size: 11px; font-family: var(--mono); padding: 3px 8px;
+    border-radius: 4px; background: var(--blue-bg); color: var(--blue);
+    border: 1px solid var(--blue-dim);
+  }
+
+  /* LAYOUT */
+  .workspace {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* LEFT PANEL */
+  .left-panel {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg2);
+  }
+  .panel-section {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-section:last-child { border-bottom: none; }
+  .section-head {
+    font-size: 10px; font-weight: 600; letter-spacing: .8px;
+    text-transform: uppercase; color: var(--text3);
+    margin-bottom: 8px; font-family: var(--mono);
+  }
+
+  /* Presets */
+  .preset-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
+  }
+  .preset-btn {
+    font-family: var(--mono); font-size: 11px;
+    padding: 6px 8px; border-radius: 6px;
+    border: 1px solid var(--border2); background: var(--bg3);
+    color: var(--text2); cursor: pointer; text-align: left;
+    transition: all .15s; line-height: 1.3;
+  }
+  .preset-btn:hover { border-color: var(--blue); color: var(--text); }
+  .preset-btn.active {
+    border-color: var(--blue); background: var(--blue-bg); color: var(--blue);
+  }
+  .preset-btn .name { font-weight: 600; display: block; }
+  .preset-btn .eg { color: var(--text3); font-size: 10px; }
+
+  /* Grammar textarea */
+  textarea {
+    width: 100%; font-family: var(--mono); font-size: 12.5px;
+    line-height: 1.75; background: var(--bg3);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 12px; color: var(--text);
+    resize: vertical; outline: none; min-height: 148px;
+    transition: border-color .15s;
+  }
+  textarea:focus { border-color: var(--blue-dim); }
+
+  /* CNF display */
+  .cnf-box {
+    font-family: var(--mono); font-size: 10.5px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 10px; color: var(--text3);
+    max-height: 72px; overflow-y: auto; line-height: 1.6;
+    margin-top: 8px;
+  }
+
+  /* String input */
+  .str-row {
+    display: flex; gap: 6px; align-items: stretch;
+  }
+  input[type="text"] {
+    flex: 1; font-family: var(--mono); font-size: 13px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 12px; color: var(--text);
+    outline: none; transition: border-color .15s;
+  }
+  input[type="text"]:focus { border-color: var(--blue-dim); }
+  .parse-btn {
+    font-family: var(--sans); font-size: 12.5px; font-weight: 600;
+    padding: 7px 18px; border-radius: 6px;
+    border: none; background: var(--blue); color: #fff;
+    cursor: pointer; transition: opacity .15s; white-space: nowrap;
+  }
+  .parse-btn:hover { opacity: .85; }
+  .parse-btn:active { opacity: .7; }
+
+  /* Status */
+  .status {
+    font-size: 12px; font-family: var(--mono); margin-top: 9px;
+    padding: 6px 10px; border-radius: 6px; min-height: 34px;
+    border: 1px solid transparent; transition: all .2s;
+  }
+  .status.ok  { background: var(--green-bg);  color: var(--green); border-color: #1a4a30; }
+  .status.err { background: var(--red-bg);    color: var(--red);   border-color: #4a1a1a; }
+  .status.warn{ background: var(--amber-bg);  color: var(--amber); border-color: #4a380a; }
+  .status.info{ background: var(--blue-bg);   color: var(--blue);  border-color: var(--blue-dim); }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    display: flex; flex-direction: column; overflow: hidden;
+    background: var(--bg);
+  }
+
+  /* Tabs */
+  .tabs-bar {
+    display: flex; border-bottom: 1px solid var(--border);
+    padding: 0 1.2rem; background: var(--bg2);
+  }
+  .tab-btn {
+    font-family: var(--sans); font-size: 12.5px; font-weight: 500;
+    padding: 12px 16px; border: none; background: transparent;
+    color: var(--text3); cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: all .15s; display: flex; align-items: center; gap: 7px;
+  }
+  .tab-btn:hover { color: var(--text2); }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--blue); }
+  .tab-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--text3); transition: background .15s;
+  }
+  .tab-btn.active .tab-dot { background: var(--blue); }
+
+  .tab-content { display: none; flex: 1; overflow: auto; padding: 1.2rem; }
+  .tab-content.active { display: flex; flex-direction: column; }
+
+  /* LEGEND */
+  .legend {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-family: var(--mono); color: var(--text3);
+  }
+  .leg-sq {
+    width: 11px; height: 11px; border-radius: 3px;
+  }
+
+  /* CYK TABLE */
+  .cyk-wrap { overflow: auto; flex: 1; }
+  .cyk-table { border-collapse: collapse; font-family: var(--mono); }
+  .cyk-table th {
+    background: var(--bg3); padding: 6px 10px; text-align: center;
+    font-size: 11px; font-weight: 500; color: var(--text3);
+    border: 1px solid var(--border); white-space: nowrap;
+  }
+  .cyk-table td {
+    padding: 6px 10px; min-width: 60px; text-align: center;
+    border: 1px solid var(--border); font-size: 10.5px;
+    vertical-align: middle; transition: all .25s; cursor: default;
+    color: var(--text3); line-height: 1.5;
+  }
+  .cyk-table td.empty  { color: var(--text3); }
+  .cyk-table td.filled { background: var(--blue-bg); color: var(--blue); border-color: var(--blue-dim); font-weight: 600; }
+  .cyk-table td.accept { background: var(--green-bg); color: var(--green); border-color: #1a4a30; font-weight: 700; }
+  .cyk-table td.active { background: var(--amber-bg); color: var(--amber); border-color: #4a380a; transform: scale(1.04); z-index:1; position:relative; }
+  .cyk-table td.below  { background: var(--bg3); opacity:.35; }
+
+  /* PARSE TREE */
+  #tree-svg-wrap { overflow: auto; flex: 1; }
+  #tree-svg-wrap svg { display: block; }
+
+  /* DERIVATION */
+  .deriv-nav {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+    padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  }
+  .nav-btn {
+    font-family: var(--mono); font-size: 12px; padding: 5px 14px;
+    border: 1px solid var(--border2); border-radius: 6px;
+    background: var(--bg3); color: var(--text2); cursor: pointer;
+    transition: all .15s;
+  }
+  .nav-btn:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); }
+  .nav-btn:disabled { opacity: .3; cursor: default; }
+  .step-ctr { font-size: 11px; font-family: var(--mono); color: var(--text3); }
+  .play-btn {
+    margin-left: auto;
+    font-family: var(--mono); font-size: 11px; padding: 5px 12px;
+    border: 1px solid var(--border2); border-radius: 6px;
+    background: var(--bg3); color: var(--text2); cursor: pointer;
+    transition: all .15s;
+  }
+  .play-btn:hover { border-color: var(--green); color: var(--green); }
+  .play-btn.playing { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+
+  .deriv-list { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; }
+  .deriv-row {
+    display: flex; align-items: baseline; gap: 10px;
+    padding: 6px 10px; border-radius: 6px; border-left: 2px solid transparent;
+    font-family: var(--mono); font-size: 12.5px; color: var(--text3);
+    transition: all .2s; line-height: 1.7;
+  }
+  .deriv-row.cur {
+    background: var(--bg2); color: var(--text);
+    border-left-color: var(--blue);
+  }
+  .deriv-row .idx { font-size: 10px; color: var(--text3); min-width: 20px; }
+  .deriv-row .sym-nt { color: var(--blue); }
+  .deriv-row .sym-t  { color: var(--green); }
+  .deriv-row .sym-hl { color: var(--amber); font-weight: 700; background: var(--amber-bg); border-radius:3px; padding:0 3px; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 8px; color: var(--text3);
+    font-family: var(--mono); font-size: 13px;
+  }
+  .empty-icon { font-size: 28px; opacity: .4; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  /* HELP TOOLTIP */
+  .help-tip {
+    font-size: 11px; color: var(--text3); font-family: var(--mono);
+    margin-top: 6px; line-height: 1.5;
+  }
+
+  /* responsive */
+  @media (max-width: 720px) {
+    .workspace { grid-template-columns: 1fr; }
+    .left-panel { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">G</div>
+    <span class="logo-text">CFG Playground</span>
+    <span class="logo-sub">Theory of Computation</span>
+  </div>
+  <div class="topbar-right">
+    <span class="badge">CYK Algorithm</span>
+    <span class="badge">Parse Tree</span>
+    <span class="badge">Derivation</span>
+  </div>
+</div>
+
+<div class="workspace">
+
+  <!-- LEFT: Grammar Editor -->
+  <div class="left-panel">
+
+    <div class="panel-section">
+      <div class="section-head">Preset Grammars</div>
+      <div class="preset-grid">
+        <button class="preset-btn active" onclick="loadPreset('arith')">
+          <span class="name">Arithmetic</span>
+          <span class="eg">a + b * c</span>
+        </button>
+        <button class="preset-btn" onclick="loadPreset('paren')">
+          <span class="name">Balanced ( )</span>
+          <span class="eg">( ( ) )</span>
+        </button>
+        <button class="preset-btn" onclick="loadPreset('palin')">
+          <span class="name">Palindromes</span>
+          <span class="eg">a b b a</span>
+        </button>
+        <button class="preset-btn" onclick="loadPreset('anbn')">
+          <span class="name">aⁿbⁿ</span>
+          <span class="eg">a a b b</span>
+        </button>
+        <button class="preset-btn" onclick="loadPreset('amb')">
+          <span class="name">Ambiguous</span>
+          <span class="eg">a + a - a</span>
+        </button>
+        <button class="preset-btn" onclick="loadPreset('custom')">
+          <span class="name">+ Custom</span>
+          <span class="eg">write your own</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="panel-section" style="flex:1;display:flex;flex-direction:column;gap:0;overflow:hidden;">
+      <div class="section-head">Productions</div>
+      <textarea id="grammar-input" spellcheck="false" oninput="grammarChanged()">S → T P | T
+T → F M | F
+M → O T | O F
+O → * | /
+P → A T | A F
+A → + | -
+F → a | b | c</textarea>
+      <div class="help-tip">Format: S → AB | a &nbsp;(use spaces between symbols)</div>
+      <div class="cnf-box" id="cnf-box">CNF form shown after parsing</div>
+    </div>
+
+    <div class="panel-section">
+      <div class="section-head">Input String</div>
+      <div class="str-row">
+        <input type="text" id="str-input" value="a + b * c" placeholder="tokens separated by spaces"/>
+        <button class="parse-btn" onclick="runParse()">Parse</button>
+      </div>
+      <div class="status info" id="status">Press Parse to run the CYK algorithm</div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Results -->
+  <div class="right-panel">
+
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('cyk')">
+        <div class="tab-dot"></div>CYK Table
+      </button>
+      <button class="tab-btn" onclick="switchTab('tree')">
+        <div class="tab-dot"></div>Parse Tree
+      </button>
+      <button class="tab-btn" onclick="switchTab('deriv')">
+        <div class="tab-dot"></div>Derivation
+      </button>
+    </div>
+
+    <!-- CYK TAB -->
+    <div class="tab-content active" id="tab-cyk">
+      <div class="legend">
+        <div class="legend-item"><div class="leg-sq" style="background:var(--green-bg);border:1px solid #1a4a30"></div>Accepted (S found)</div>
+        <div class="legend-item"><div class="leg-sq" style="background:var(--blue-bg);border:1px solid var(--blue-dim)"></div>Nonterminals</div>
+        <div class="legend-item"><div class="leg-sq" style="background:var(--amber-bg);border:1px solid #4a380a"></div>Currently computing</div>
+      </div>
+      <div class="cyk-wrap">
+        <div id="cyk-container">
+          <div class="empty-state">
+            <div class="empty-icon">⬚</div>
+            Press Parse to run the CYK algorithm
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TREE TAB -->
+    <div class="tab-content" id="tab-tree">
+      <div id="tree-svg-wrap">
+        <div class="empty-state">
+          <div class="empty-icon">⊤</div>
+          Parse a valid string to see its parse tree
+        </div>
+      </div>
+    </div>
+
+    <!-- DERIVATION TAB -->
+    <div class="tab-content" id="tab-deriv">
+      <div class="deriv-nav">
+        <button class="nav-btn" id="btn-prev" onclick="stepDeriv(-1)" disabled>← Prev</button>
+        <button class="nav-btn" id="btn-next" onclick="stepDeriv(1)" disabled>Next →</button>
+        <span class="step-ctr" id="step-ctr"></span>
+        <button class="play-btn" id="play-btn" onclick="togglePlay()" disabled>▶ Auto-play</button>
+      </div>
+      <div class="deriv-list" id="deriv-list">
+        <div class="empty-state">
+          <div class="empty-icon">∷</div>
+          Parse a valid string to see derivation steps
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── PRESETS ───────────────────────────────────────────────────────────────
+const PRESETS = {
+  arith: {
+    g: `S → T P | T\nT → F M | F\nM → O T | O F\nO → * | /\nP → A T | A F\nA → + | -\nF → a | b | c`,
+    s: 'a + b * c'
+  },
+  paren: {
+    g: `S → L R | L S | S S\nL → (\nR → )`,
+    s: '( ( ) )'
+  },
+  palin: {
+    g: `S → a S a | b S b | a a | b b | a | b`,
+    s: 'a b b a'
+  },
+  anbn: {
+    g: `S → A B | A C\nC → S B\nA → a\nB → b`,
+    s: 'a a b b'
+  },
+  amb: {
+    g: `S → S A S | a\nA → + | -`,
+    s: 'a + a - a'
+  },
+  custom: {
+    g: `S → A B\nA → a\nB → b`,
+    s: 'a b'
+  }
+};
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let derivSteps = [], currentStep = 0, playTimer = null;
+let animTimer = null;
+
+// ─── PRESET LOADER ──────────────────────────────────────────────────────────
+function loadPreset(k) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('grammar-input').value = PRESETS[k].g;
+  document.getElementById('str-input').value = PRESETS[k].s;
+  grammarChanged();
+}
+
+function grammarChanged() {
+  document.getElementById('cnf-box').textContent = 'Edit grammar then press Parse';
+}
+
+// ─── GRAMMAR PARSER ──────────────────────────────────────────────────────────
+function parseGrammar(txt) {
+  const rules = {};
+  const lines = txt.trim().split('\n').filter(l => l.trim());
+  for (const line of lines) {
+    const sep = line.includes('→') ? '→' : '->';
+    const parts = line.split(sep);
+    if (parts.length < 2) continue;
+    const lhs = parts[0].trim();
+    const rhss = parts.slice(1).join(sep).split('|').map(r => r.trim().split(/\s+/).filter(x => x));
+    if (!rules[lhs]) rules[lhs] = [];
+    rules[lhs].push(...rhss);
+  }
+  return rules;
+}
+
+function isTerminal(sym, rules) { return !rules[sym]; }
+
+// ─── CNF CONVERSION ──────────────────────────────────────────────────────────
+function toCNF(rules) {
+  const cnf = {};
+  const termMap = {};
+  let tc = 0, bc = 0;
+
+  function getTermVar(t) {
+    for (const [k, v] of Object.entries(termMap)) if (v === t) return k;
+    const v = '_T' + tc++;
+    termMap[v] = t;
+    cnf[v] = [[t]];
+    return v;
+  }
+
+  // Step 1: Convert to proper CNF form
+  for (const [A, prods] of Object.entries(rules)) {
+    if (!cnf[A]) cnf[A] = [];
+    
+    for (const prod of prods) {
+      if (prod.length === 0) {
+        continue; // Skip epsilon
+      } else if (prod.length === 1) {
+        // Single symbol - terminal or nonterminal
+        const sym = prod[0];
+        if (isTerminal(sym, rules)) {
+          // Terminal: wrap it
+          const tv = getTermVar(sym);
+          cnf[A].push([tv]);
+        } else {
+          // Non-terminal: keep as unit rule for elimination later
+          cnf[A].push([sym]);
+        }
+      } else {
+        // Multiple symbols: must convert to binary form
+        // Replace all terminals with variables first
+        let symbols = prod.map(s => isTerminal(s, rules) ? getTermVar(s) : s);
+        
+        // Now convert to binary: A -> B C D becomes A -> B X, X -> C D
+        // We do this iteratively from right to left
+        while (symbols.length > 2) {
+          const newVar = '_B' + bc++;
+          const lastTwo = [symbols[symbols.length - 2], symbols[symbols.length - 1]];
+          cnf[newVar] = [lastTwo];
+          symbols = [...symbols.slice(0, symbols.length - 2), newVar];
+        }
+        
+        cnf[A].push(symbols);
+      }
+    }
+  }
+
+  // Step 2: Unit rule elimination
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const [A, prods] of Object.entries(cnf)) {
+      const extra = [];
+      for (const prod of prods) {
+        if (prod.length === 1 && cnf[prod[0]] && prod[0] !== A) {
+          for (const p2 of cnf[prod[0]]) {
+            const key = JSON.stringify(p2);
+            if (!prods.some(p => JSON.stringify(p) === key) && !extra.some(p => JSON.stringify(p) === key)) {
+              extra.push(p2.slice());
+              changed = true;
+            }
+          }
+        }
+      }
+      cnf[A].push(...extra);
+    }
+    // Remove pure unit nonterminal rules
+    for (const A of Object.keys(cnf)) {
+      cnf[A] = cnf[A].filter(prod => !(prod.length === 1 && cnf[prod[0]] && prod[0] !== A));
+    }
+  }
+
+  return cnf;
+}
+
+// ─── CYK PARSER ──────────────────────────────────────────────────────────────
+function cykParse(tokens, cnf, startSym) {
+  const n = tokens.length;
+  const table = Array.from({length: n}, () => Array.from({length: n}, () => ({})));
+  const bp = Array.from({length: n}, () => Array.from({length: n}, () => ({})));
+
+  // Length-1: terminals
+  for (let i = 0; i < n; i++) {
+    const tok = tokens[i];
+    for (const [A, prods] of Object.entries(cnf)) {
+      for (const prod of prods) {
+        // Direct match: A -> terminal or A -> _T where _T -> terminal
+        if (prod.length === 1) {
+          if (prod[0] === tok) {
+            // Direct terminal rule
+            table[i][i][A] = true;
+            bp[i][i][A] = {term: true, tok: tok};
+          } else if (cnf[prod[0]]) {
+            // Check if this is a variable pointing to the terminal
+            for (const subprod of cnf[prod[0]]) {
+              if (subprod.length === 1 && subprod[0] === tok) {
+                table[i][i][A] = true;
+                bp[i][i][A] = {term: true, tok: tok};
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Longer spans
+  for (let len = 2; len <= n; len++) {
+    for (let i = 0; i <= n - len; i++) {
+      const j = i + len - 1;
+      for (let k = i; k < j; k++) {
+        for (const [A, prods] of Object.entries(cnf)) {
+          for (const prod of prods) {
+            if (prod.length === 2) {
+              const [B, C] = prod;
+              if (table[i][k][B] && table[k+1][j][C]) {
+                if (!table[i][j][A]) {
+                  table[i][j][A] = true;
+                  bp[i][j][A] = {split: k, left: B, right: C};
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return {table, bp, accepted: !!(table[0][n-1][startSym]), n};
+}
+
+// ─── TREE BUILDER ────────────────────────────────────────────────────────────
+function buildTree(bp, i, j, sym, tokens) {
+  if (!bp[i][j][sym]) return {label: sym, children: [], terminal: false};
+  const b = bp[i][j][sym];
+  if (b.term) return {label: sym, children: [{label: b.tok, children: [], terminal: true}], terminal: false};
+  const k = b.split;
+  return {
+    label: sym, terminal: false,
+    children: [
+      buildTree(bp, i, k, b.left, tokens),
+      buildTree(bp, k+1, j, b.right, tokens)
+    ]
+  };
+}
+
+// ─── DERIVATION BUILDER ──────────────────────────────────────────────────────
+function buildDerivation(tree) {
+  const steps = [{nodes: [tree], desc: tree.label}];
+  function expand(sentential) {
+    const idx = sentential.findIndex(n => !n.terminal && n.children.length > 0);
+    if (idx < 0) return;
+    const node = sentential[idx];
+    const newSent = [...sentential.slice(0, idx), ...node.children, ...sentential.slice(idx + 1)];
+    const desc = newSent.map(n => n.label).join(' ');
+    steps.push({nodes: newSent.map(n => ({...n})), desc, expandAt: idx, expandLen: node.children.length, sym: node.label});
+    expand(newSent);
+  }
+  expand([tree]);
+  return steps;
+}
+
+// ─── RENDER CYK TABLE ────────────────────────────────────────────────────────
+function renderCYKTable(table, tokens, startSym, n) {
+  let html = '<table class="cyk-table"><thead><tr><th>i \\ j</th>';
+  for (let j = 0; j < n; j++) {
+    html += `<th>${j}<br><span style="font-size:10px;color:var(--green);font-weight:700">${tokens[j]}</span></th>`;
+  }
+  html += '</tr></thead><tbody>';
+  for (let i = 0; i < n; i++) {
+    html += `<tr><th>${i}</th>`;
+    for (let j = 0; j < n; j++) {
+      if (j < i) {
+        html += '<td class="below">—</td>';
+      } else {
+        html += `<td data-i="${i}" data-j="${j}">∅</td>`;
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  return html;
+}
+
+function updateCell(cell, symSet, i, j, n, startSym) {
+  const syms = Object.keys(symSet).filter(s => !s.startsWith('_'));
+  if (!syms.length) { cell.textContent = '∅'; cell.className = 'empty'; return; }
+  cell.textContent = syms.join(', ');
+  if (i === 0 && j === n - 1 && symSet[startSym]) {
+    cell.className = 'accept';
+  } else {
+    cell.className = 'filled';
+  }
+}
+
+// ─── RENDER PARSE TREE ────────────────────────────────────────────────────────
+function renderTree(tree) {
+  const wrap = document.getElementById('tree-svg-wrap');
+  if (!tree) {
+    wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">✗</div>String rejected — no parse tree</div>';
+    return;
+  }
+
+  const NW = 56, NH = 30, HGAP = 10, VGAP = 48;
+
+  function layout(node, depth) {
+    node._y = depth * (NH + VGAP);
+    if (!node.children.length) { node._w = NW; return; }
+    node.children.forEach(c => layout(c, depth + 1));
+    const total = node.children.reduce((s, c) => s + c._w, 0) + (node.children.length - 1) * HGAP;
+    node._w = Math.max(total, NW);
+  }
+
+  function place(node, ox) {
+    node._x = ox + (node._w - NW) / 2;
+    let cx = ox;
+    node.children.forEach(c => { place(c, cx); cx += c._w + HGAP; });
+  }
+
+  layout(tree, 0);
+  place(tree, 0);
+
+  function maxX(n) { return Math.max(n._x + NW, ...(n.children.map(maxX))); }
+  function maxY(n) { return Math.max(n._y + NH, ...(n.children.map(maxY))); }
+  const W = Math.max(maxX(tree) + 20, 400);
+  const H = maxY(tree) + 30;
+
+  let svg = `<svg width="${W}" height="${H}" style="display:block">`;
+  svg += `<defs><marker id="tm" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M1 1L6 4L1 7" fill="none" stroke="#3a3d44" stroke-width="1.5" stroke-linecap="round"/></marker></defs>`;
+
+  function draw(node) {
+    const cx = node._x + NW / 2;
+    node.children.forEach(c => {
+      svg += `<line x1="${cx}" y1="${node._y + NH}" x2="${c._x + NW/2}" y2="${c._y}" stroke="var(--border2)" stroke-width="1" marker-end="url(#tm)"/>`;
+    });
+    const isT = node.terminal;
+    const fill = isT ? 'var(--green-bg)' : 'var(--blue-bg)';
+    const stroke = isT ? '#1a4a30' : 'var(--blue-dim)';
+    const tc = isT ? 'var(--green)' : 'var(--blue)';
+    svg += `<rect x="${node._x}" y="${node._y}" width="${NW}" height="${NH}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="1"/>`;
+    svg += `<text x="${cx}" y="${node._y + NH/2}" text-anchor="middle" dominant-baseline="central" font-family="'JetBrains Mono',monospace" font-size="11" fill="${tc}" font-weight="${isT?'400':'600'}">${node.label}</text>`;
+    node.children.forEach(draw);
+  }
+  draw(tree);
+  svg += '</svg>';
+  wrap.innerHTML = svg;
+}
+
+// ─── RENDER DERIVATION ────────────────────────────────────────────────────────
+function renderDerivation() {
+  const list = document.getElementById('deriv-list');
+  const prevBtn = document.getElementById('btn-prev');
+  const nextBtn = document.getElementById('btn-next');
+  const playBtn = document.getElementById('play-btn');
+  const ctr = document.getElementById('step-ctr');
+
+  if (!derivSteps.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">∷</div>No derivation available</div>';
+    prevBtn.disabled = nextBtn.disabled = playBtn.disabled = true;
+    ctr.textContent = '';
+    return;
+  }
+
+  prevBtn.disabled = currentStep <= 0;
+  nextBtn.disabled = currentStep >= derivSteps.length - 1;
+  playBtn.disabled = false;
+  ctr.textContent = `Step ${currentStep + 1} / ${derivSteps.length}`;
+
+  let html = '';
+  derivSteps.forEach((step, idx) => {
+    const isCur = idx === currentStep;
+    const toks = step.desc.split(' ').map((tok, ti) => {
+      const isNT = /^[A-Z]/.test(tok) && tok === tok[0].toUpperCase() + tok.slice(1);
+      const isHL = isCur && idx > 0 && ti >= step.expandAt && ti < step.expandAt + step.expandLen;
+      if (isHL) return `<span class="sym-hl">${tok}</span>`;
+      if (!isNT) return `<span class="sym-t">${tok}</span>`;
+      return `<span class="sym-nt">${tok}</span>`;
+    }).join(' ');
+    html += `<div class="deriv-row${isCur ? ' cur' : ''}">
+      <span class="idx">${idx}</span>
+      <span>${toks}</span>
+    </div>`;
+  });
+  list.innerHTML = html;
+
+  const cur = list.querySelector('.cur');
+  if (cur) cur.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+}
+
+function stepDeriv(dir) {
+  currentStep = Math.max(0, Math.min(derivSteps.length - 1, currentStep + dir));
+  renderDerivation();
+}
+
+let playing = false;
+function togglePlay() {
+  playing = !playing;
+  const btn = document.getElementById('play-btn');
+  btn.textContent = playing ? '⏸ Pause' : '▶ Auto-play';
+  btn.classList.toggle('playing', playing);
+  if (playing) {
+    playTimer = setInterval(() => {
+      if (currentStep >= derivSteps.length - 1) {
+        togglePlay();
+        return;
+      }
+      stepDeriv(1);
+    }, 800);
+  } else {
+    clearInterval(playTimer);
+  }
+}
+
+// ─── TAB SWITCHER ────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    const ns = ['cyk', 'tree', 'deriv'];
+    b.classList.toggle('active', ns[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(tc => {
+    tc.classList.toggle('active', tc.id === 'tab-' + name);
+  });
+}
+
+// ─── STATUS ──────────────────────────────────────────────────────────────────
+function setStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status ' + type;
+}
+
+// ─── MAIN PARSE ──────────────────────────────────────────────────────────────
+function runParse() {
+  if (animTimer) clearInterval(animTimer);
+  if (playTimer) { clearInterval(playTimer); playing = false; }
+
+  const grammarTxt = document.getElementById('grammar-input').value;
+  const strTxt = document.getElementById('str-input').value.trim();
+  const tokens = strTxt.split(/\s+/).filter(x => x);
+
+  if (!tokens.length) { setStatus('Enter a string to parse', 'warn'); return; }
+
+  let rules;
+  try { rules = parseGrammar(grammarTxt); } catch(e) { setStatus('Grammar error: ' + e.message, 'err'); return; }
+
+  const startSym = Object.keys(rules)[0];
+  if (!startSym) { setStatus('No rules found in grammar', 'err'); return; }
+
+  let cnf;
+  try { cnf = toCNF(rules); } catch(e) { setStatus('CNF conversion failed: ' + e.message, 'err'); return; }
+
+  // Show CNF
+  const cnfLines = Object.entries(cnf)
+    .filter(([k]) => !k.startsWith('_T') && !k.startsWith('_B'))
+    .map(([A, prods]) => `${A} → ${prods.map(p => p.join(' ')).join(' | ')}`);
+  document.getElementById('cnf-box').textContent = cnfLines.join('  |  ') || 'CNF generated';
+
+  let result;
+  try { result = cykParse(tokens, cnf, startSym); } catch(e) { setStatus('Parse error: ' + e.message, 'err'); return; }
+
+  if (result.accepted) {
+    setStatus(`✓ Accepted  — "${strTxt}" ∈ L(G)`, 'ok');
+  } else {
+    setStatus(`✗ Rejected  — "${strTxt}" ∉ L(G)`, 'err');
+  }
+
+  // CYK table with animation
+  const container = document.getElementById('cyk-container');
+  container.innerHTML = renderCYKTable(result.table, tokens, startSym, result.n);
+
+  const cellMap = {};
+  container.querySelectorAll('td[data-i]').forEach(td => {
+    cellMap[td.dataset.i + ',' + td.dataset.j] = td;
+  });
+
+  const order = [];
+  for (let len = 1; len <= result.n; len++)
+    for (let i = 0; i <= result.n - len; i++)
+      order.push([i, i + len - 1]);
+
+  let step = 0;
+  animTimer = setInterval(() => {
+    if (step > 0) {
+      const [pi, pj] = order[step - 1];
+      const pc = cellMap[pi + ',' + pj];
+      if (pc) updateCell(pc, result.table[pi][pj], pi, pj, result.n, startSym);
+    }
+    if (step >= order.length) { clearInterval(animTimer); return; }
+    const [ci, cj] = order[step];
+    const cc = cellMap[ci + ',' + cj];
+    if (cc) cc.className = 'active';
+    step++;
+  }, 110);
+
+  // Tree
+  let tree = null;
+  if (result.accepted) {
+    tree = buildTree(result.bp, 0, result.n - 1, startSym, tokens);
+    derivSteps = buildDerivation(tree);
+  } else {
+    derivSteps = [];
+  }
+
+  currentStep = 0;
+  renderTree(tree);
+  renderDerivation();
+  document.getElementById('play-btn').classList.remove('playing');
+  document.getElementById('play-btn').textContent = '▶ Auto-play';
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+setTimeout(runParse, 300);
+</script>
+</body>
+</html>
