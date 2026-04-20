@@ -1,86 +1,117 @@
 # CFG Playground
 
+A web-based interactive system for constructing, transforming, and parsing **Context-Free Grammars (CFGs)** using the **CYK (Cocke–Younger–Kasami) algorithm**, with real-time visualization of parsing structures.
+
+---
+
 ## Overview
 
-CFG Playground is a web-based interactive tool for exploring **Context-Free Grammars (CFGs)** and fundamental parsing techniques from the Theory of Computation. It enables users to define grammars, evaluate input strings, and visualize parsing behavior through structured representations.
+CFG Playground provides an environment to:
 
-The platform is designed to support both **conceptual learning** and **practical experimentation**, bridging the gap between formal language theory and implementation.
+* Define custom grammars
+* Automatically convert them into **Chomsky Normal Form (CNF)**
+* Parse input strings using CYK
+* Visualize internal parsing steps through:
 
----
+  * CYK table construction
+  * Parse trees
+  * Stepwise derivations
 
-## Key Features
-
-### Grammar Definition
-
-* Supports user-defined CFG productions using standard notation
-* Handles multiple production rules and alternatives
-* Includes editable grammar input interface
-
-### Preset Grammars
-
-* Arithmetic expressions
-* Balanced parentheses
-* Palindromes
-* Ambiguous grammars
-
-### CYK Parsing Engine
-
-* Implements the **Cocke–Younger–Kasami (CYK) algorithm**
-* Uses dynamic programming for efficient string validation
-* Determines membership of a string in the language ( L(G) )
-
-### Visualization Modules
-
-* **CYK Table**: Displays step-by-step parsing table construction
-* **Parse Tree**: Represents hierarchical derivation structure
-* **Derivation View**: Shows production expansion sequences
-
-### Input Validation
-
-* Accepts user-defined input strings
-* Provides deterministic output:
-
-  * Accepted (string ∈ language)
-  * Rejected (string ∉ language)
+The system is designed to make formal parsing algorithms observable and testable.
 
 ---
 
-## Theoretical Foundations
+## Core Capabilities
 
-* Context-Free Grammars (CFG)
-* Chomsky Normal Form (CNF)
-* CYK Parsing Algorithm
-* Parse Trees and Derivations
-* Grammar Ambiguity
+### 1. Grammar Processing
+
+* Accepts CFG input using standard production notation
+* Parses and normalizes rules internally
+* Converts arbitrary CFG into **CNF (on-the-fly)** 
+
+### 2. CYK Parsing Engine
+
+* Implements bottom-up dynamic programming
+* Builds a triangular CYK table
+* Tracks backpointers for reconstruction of parse structures
+
+### 3. Visualization System
+
+#### CYK Table
+
+* Incremental cell computation animation
+* Highlights:
+
+  * Active computation cell
+  * Filled entries
+  * Final acceptance state
+
+#### Parse Tree
+
+* Dynamically generated from backpointers
+* Tree layout algorithm with proper spacing and hierarchy
+
+#### Derivation View
+
+* Step-by-step expansion of sentential forms
+* Supports:
+
+  * Manual navigation
+  * Auto-play traversal
 
 ---
 
-## System Architecture
+## Features
 
-The system is composed of the following core components:
+* Preset grammars:
 
-* **Grammar Parser**: Processes and validates production rules
-* **CYK Engine**: Executes bottom-up parsing using CNF-compatible grammars
-* **Visualization Layer**: Renders tables, trees, and derivations
-* **User Interface**: Facilitates interaction and real-time feedback
+  * Arithmetic expressions
+  * Balanced parentheses
+  * Palindromes
+  * (a^n b^n) language
+  * Ambiguous grammar
+
+* Real-time CNF display
+
+* Token-based input parsing (space-separated symbols)
+
+* Status feedback system (Accepted / Rejected / Errors)
+
+---
+
+## Architecture
+
+The system consists of four main components:
+
+| Component           | Responsibility                          |
+| ------------------- | --------------------------------------- |
+| Grammar Parser      | Parses user input into structured rules |
+| CNF Converter       | Transforms CFG into valid CNF form      |
+| CYK Engine          | Performs parsing and table computation  |
+| Visualization Layer | Renders table, tree, and derivation     |
+
+---
+
+## Algorithmic Flow
+
+1. Parse input grammar
+2. Convert grammar to CNF
+3. Tokenize input string
+4. Initialize CYK table (length = 1 substrings)
+5. Fill table for increasing substring lengths
+6. Check if start symbol derives full string
+7. If accepted:
+
+   * Build parse tree
+   * Generate derivation steps
 
 ---
 
 ## Limitations
 
-* The CYK algorithm requires grammars to be in **Chomsky Normal Form (CNF)**
-* Non-CNF grammars may result in incorrect parsing outcomes
-* Current implementation provides limited diagnostic feedback for rejected inputs
-
----
-
-## Future Enhancements
-
-* Automated CNF conversion
-* Detailed error diagnostics for invalid strings
-* Stepwise CYK execution visualization
-* Enhanced grammar validation and feedback
-* Export functionality for parse trees and derivations
+* CNF conversion does not fully optimize all edge cases (e.g., epsilon-heavy grammars)
+* Grammar validation is permissive (invalid structures may silently degrade results)
+* Error feedback is minimal for rejected strings
 
 ---
 
@@ -89,19 +120,40 @@ The system is composed of the following core components:
 ```bash
 git clone https://github.com/your-username/cfg-playground.git
 cd cfg-playground
-npm install
-npm start
-```
+open index.html
 
----
 
-## Use Case
+## Usage
 
-CFG Playground is intended for:
+1. Select a preset or define a custom grammar
+2. Enter a space-separated input string
+3. Click **Parse**
+4. Explore:
 
-* Students studying formal languages and automata theory
-* Educators demonstrating parsing algorithms
-* Developers experimenting with grammar-based systems
+   * CYK Table
+   * Parse Tree
+   * Derivation Steps
 
----
+## Example
+
+**Input Grammar**
+S → A B  
+A → a  
+B → b  
+
+
+**Input String**
+a b
+
+**Output**
+✓ Accepted — string ∈ L(G)
+
+## Future Improvements
+
+* Strong grammar validation with error diagnostics
+* Better CNF conversion (epsilon & unit optimization)
+* Support for ambiguous parse trees (multiple trees)
+* Export functionality (JSON / SVG)
+* Step-by-step CYK explanation mode
+
 
